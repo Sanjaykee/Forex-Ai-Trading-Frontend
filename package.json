@@ -3,12 +3,8 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --mode local",
-    "dev:local": "vite --mode local",
-    "dev:prod": "vite --mode prod",
-    "build": "vite build --mode prod",
-    "build:local": "vite build --mode local",
-    "build:prod": "vite build --mode prod",
+    "dev": "vite",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {

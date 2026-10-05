@@ -25,11 +25,11 @@ export default function Layout({ children }) {
           <div className="flex items-center justify-between">
             <h1 className="text-accent font-bold text-lg">🤖 ForexAI</h1>
             <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
-              import.meta.env.MODE === 'production' || import.meta.env.MODE === 'prod'
+              (import.meta.env.VITE_ACTIVE_PROFILE || '').toLowerCase() === 'prod' || import.meta.env.PROD
                 ? 'bg-buy/20 text-buy border border-buy/30'
                 : 'bg-accent/20 text-accent border border-accent/30'
             }`}>
-              {import.meta.env.MODE === 'production' || import.meta.env.MODE === 'prod' ? 'PROD' : 'LOCAL'}
+              {(import.meta.env.VITE_ACTIVE_PROFILE || '').toLowerCase() === 'prod' || import.meta.env.PROD ? 'PROD' : 'LOCAL'}
             </span>
           </div>
           <p className="text-xs text-wait mt-0.5">$1 Risk Per Trade</p>
