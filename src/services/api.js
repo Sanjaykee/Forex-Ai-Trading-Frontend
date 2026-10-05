@@ -37,10 +37,12 @@ export const performanceAPI = {
 }
 
 export const settingsAPI = {
-  get:          ()     => api.get('/settings/'),
-  update:       (data) => api.put('/settings/', data),
-  setupMT5:     (data) => api.post('/settings/mt5', data),
-  testTelegram: (data) => api.post('/settings/telegram/test', data),
+  get:              ()     => api.get('/settings/'),
+  update:           (data) => api.put('/settings/', data),
+  setupMT5:         (data) => api.post('/settings/mt5', data),
+  testTelegram:     (data) => api.post('/settings/telegram/test', data),
+  setupMetaApi:     (data) => api.post('/settings/metaapi', data),
+  getMetaApiStatus: ()     => api.get('/settings/metaapi/status'),
 }
 
 export const chatAPI = {
