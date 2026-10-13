@@ -10,9 +10,12 @@ export default function Settings() {
   const [telegramChatId, setTelegramChatId] = useState('')
   const [telegramStatus, setTelegramStatus] = useState('')
   const [testingTelegram, setTestingTelegram] = useState(false)
-  const [metaApi, setMetaApi] = useState({ token: '', account_id: '', region: 'new-york' })
+  const [metaApi, setMetaApi] = useState({ token: '', account_id: '', region: 'backup-new-york' })
   const [metaApiStatus, setMetaApiStatus] = useState(null)
   const [savingMetaApi, setSavingMetaApi] = useState(false)
+  const [ctrader, setCtrader] = useState({ account_id: '', server: 'demo.ctrader.com' })
+  const [ctraderStatus, setCtraderStatus] = useState(null)
+  const [savingCtrader, setSavingCtrader] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saved, setSaved]     = useState('')
 
@@ -26,7 +29,7 @@ export default function Settings() {
           max_losses_day: parseInt(s.max_losses_day  || 2),
           rr_ratio:       parseFloat(s.rr_ratio      || 2),
         })
-        setDataSource('metaapi')
+        setDataSource(s.data_source || 'yfinance')
         setHasPassword(!!s.has_mt5_password)
         setTelegramChatId(s.telegram_chat_id || '')
         setMt5(prev => ({
@@ -35,12 +38,22 @@ export default function Settings() {
           mt5_server:       s.mt5_server || '',
           telegram_chat_id: s.telegram_chat_id || '',
         }))
+        if (s.ctrader_account_id) {
+          setCtraderStatus({ configured: true, connected: s.ctrader_connected, account_id: s.ctrader_account_id })
+          setCtrader(prev => ({
+            ...prev,
+            account_id: s.ctrader_account_id || '',
+            server:     s.ctrader_server     || 'demo.ctrader.com',
+          }))
+        }
+        if (s.metaapi_account_id) {
+          setMetaApiStatus(prev => ({ ...prev, configured: true, account_id: s.metaapi_account_id }))
+          setMetaApi(prev => ({ ...prev, account_id: s.metaapi_account_id }))
+        }
       }),
       settingsAPI.getMetaApiStatus().then(r => {
-        if (r.data?.configured) {
-          setMetaApiStatus(r.data)
-        }
-      }).catch(() => {})
+        if (r.data?.configured) setMetaApiStatus(r.data)
+      }).catch(() => {}),
     ]).finally(() => setLoading(false))
   }, [])
 
@@ -55,7 +68,7 @@ export default function Settings() {
       const res = await settingsAPI.setupMetaApi({
         metaapi_token: metaApi.token.trim(),
         metaapi_account_id: metaApi.account_id.trim(),
-        metaapi_region: metaApi.region || 'new-york'
+        metaapi_region: metaApi.region || 'backup-new-york'
       })
       if (res.data?.success) {
         setMetaApiStatus({ configured: true, connected: true, account: res.data.account })
@@ -117,6 +130,31 @@ export default function Settings() {
     }
   }
 
+  const saveCtrader = async () => {
+    if (!ctrader.account_id.trim()) {
+      setSaved('⚠️ Please enter your Account ID')
+      setTimeout(() => setSaved(''), 4000)
+      return
+    }
+    setSavingCtrader(true)
+    try {
+      const res = await settingsAPI.setupCtrader({
+        ctrader_account_id: ctrader.account_id,
+        ctrader_server:     ctrader.server,
+      })
+      if (res.data?.success) {
+        if (res.data?.connected) {
+          setCtraderStatus({ configured: true, account_id: ctrader.account_id, server: ctrader.server, account: res.data.account })
+          setDataSource('ctrader')
+        }
+        setSaved(res.data.message)
+      } else {
+        setSaved('⚠️ ' + (res.data?.message || 'Failed to save'))
+      }
+    } catch { setSaved('Error saving cTrader credentials') }
+    finally { setSavingCtrader(false); setTimeout(() => setSaved(''), 4000) }
+  }
+
   const saveMT5 = async () => {
     try {
       const res = await settingsAPI.setupMT5({ ...mt5, telegram_chat_id: telegramChatId })
@@ -146,8 +184,9 @@ export default function Settings() {
         <h3 className="font-semibold text-white">Data Source</h3>
         <p className="text-xs text-wait">Choose where to fetch market data from</p>
         {[
-          { value: 'metaapi', label: 'MetaApi Cloud MT5 (Recommended for Mobile Trading)', desc: 'Direct cloud connection to broker — trades open on MT5 mobile with zero PC needed' },
-          { value: 'mt5',     label: 'MetaTrader 5 Desktop (Local PC)', desc: 'Real broker data — requires MT5 terminal running on your Windows PC' },
+          { value: 'ctrader', label: 'cTrader Open API (IC Markets)', desc: 'Free forever — candles + live price + auto trade execution from cloud' },
+          { value: 'metaapi', label: 'MetaApi Cloud MT5', desc: 'Direct cloud connection to broker — trades open on MT5 mobile' },
+          { value: 'mt5',     label: 'MetaTrader 5 Desktop (Local PC)', desc: 'Requires MT5 terminal running on your Windows PC' },
         ].map(opt => (
           <label key={opt.value} className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
             dataSource === opt.value ? 'border-accent bg-accent/10' : 'border-border'
@@ -162,6 +201,49 @@ export default function Settings() {
             </div>
           </label>
         ))}
+      </div>
+
+      {/* cTrader Open API Card */}
+      <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-white">🔴 cTrader Open API (IC Markets)</h3>
+          {ctraderStatus?.connected
+            ? <span className="text-[10px] text-buy font-medium bg-buy/10 px-2 py-0.5 rounded border border-buy/20">✓ Connected (Account: {ctraderStatus.account_id})</span>
+            : ctraderStatus?.configured
+            ? <span className="text-[10px] text-yellow-400 font-medium bg-yellow-400/10 px-2 py-0.5 rounded border border-yellow-400/20">⚠️ Saved — click Connect to authorize</span>
+            : null
+          }
+        </div>
+        <p className="text-xs text-wait">
+          Free forever — connects IC Markets cTrader demo/live account. Provides historical candles, live prices and auto trade execution directly from Render cloud. No MetaApi needed.
+        </p>
+        {[
+          { label: 'Account ID', key: 'account_id', type: 'text', placeholder: 'IC Markets account number e.g. 10124555' },
+          { label: 'Server',     key: 'server',     type: 'text', placeholder: 'demo.ctrader.com' },
+        ].map(({ label, key, type, placeholder }) => (
+          <div key={key}>
+            <label className="text-xs text-wait block mb-1">{label}</label>
+            <input type={type} placeholder={placeholder}
+              className="w-full bg-dark border border-border rounded-lg px-4 py-2 text-white text-sm outline-none focus:border-accent"
+              value={ctrader[key]}
+              onChange={e => setCtrader({ ...ctrader, [key]: e.target.value })} />
+          </div>
+        ))}
+        <Button onClick={saveCtrader} disabled={savingCtrader}>
+          {savingCtrader ? 'Saving...' : 'Save cTrader Credentials'}
+        </Button>
+        {ctraderStatus?.configured && (
+          <button
+            onClick={async () => {
+              const res = await settingsAPI.getCtraderAuthUrl()
+              if (res.data?.auth_url) window.open(res.data.auth_url, '_blank')
+              else setSaved('⚠️ Save credentials first')
+            }}
+            className="w-full px-4 py-2 text-sm font-semibold text-white bg-green-700 hover:bg-green-600 rounded-lg transition-colors"
+          >
+            🔗 Connect cTrader Account (Browser Login)
+          </button>
+        )}
       </div>
 
       {/* MetaApi Cloud MT5 Card */}
@@ -191,7 +273,7 @@ export default function Settings() {
           <label className="text-xs text-wait block mb-1">MetaApi Account ID</label>
           <input
             type="text"
-            placeholder={metaApiStatus?.configured ? "Account ID Active" : "e.g. 5e1b8c2e-4b2a-4a6c-9c71-..."}
+            placeholder={metaApiStatus?.configured ? `Account: ${metaApiStatus.account_id || 'Active'}` : "e.g. 5e1b8c2e-4b2a-4a6c-9c71-..."}
             className="w-full bg-dark border border-border rounded-lg px-4 py-2 text-white text-sm outline-none focus:border-accent"
             value={metaApi.account_id}
             onChange={e => setMetaApi({ ...metaApi, account_id: e.target.value })}
@@ -204,7 +286,8 @@ export default function Settings() {
             value={metaApi.region}
             onChange={e => setMetaApi({ ...metaApi, region: e.target.value })}
           >
-            <option value="new-york">New York (Standard)</option>
+            <option value="backup-new-york">New York (cloud-g2 / backup-new-york)</option>
+            <option value="new-york">New York (standard)</option>
             <option value="london">London</option>
             <option value="singapore">Singapore</option>
             <option value="frankfurt">Frankfurt</option>
