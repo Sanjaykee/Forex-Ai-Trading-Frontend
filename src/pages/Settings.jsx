@@ -46,14 +46,20 @@ export default function Settings() {
             server:     s.ctrader_server     || 'demo.ctrader.com',
           }))
         }
-        if (s.metaapi_account_id) {
-          setMetaApiStatus(prev => ({ ...prev, configured: true, account_id: s.metaapi_account_id }))
-          setMetaApi(prev => ({ ...prev, account_id: s.metaapi_account_id }))
+        if (s.metaapi_account_id || s.has_metaapi) {
+          setMetaApi(prev => ({ ...prev, account_id: s.metaapi_account_id || '' }))
+          setMetaApiStatus({
+            configured: true,
+            connected:  s.metaapi_connected || false,
+            account_id: s.metaapi_account_id || '',
+            account: s.metaapi_connected ? {
+              balance:  s.metaapi_balance,
+              currency: s.metaapi_currency,
+              server:   s.metaapi_server,
+            } : null,
+          })
         }
       }),
-      settingsAPI.getMetaApiStatus().then(r => {
-        if (r.data?.configured) setMetaApiStatus(r.data)
-      }).catch(() => {}),
     ]).finally(() => setLoading(false))
   }, [])
 
