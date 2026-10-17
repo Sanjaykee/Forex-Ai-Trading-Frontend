@@ -10,6 +10,7 @@ export default function Settings() {
   const [telegramChatId, setTelegramChatId] = useState('')
   const [telegramStatus, setTelegramStatus] = useState('')
   const [testingTelegram, setTestingTelegram] = useState(false)
+  const [execMode, setExecMode] = useState('manual')
   const [metaApi, setMetaApi] = useState({ token: '', account_id: '', region: 'backup-new-york' })
   const [metaApiStatus, setMetaApiStatus] = useState(null)
   const [savingMetaApi, setSavingMetaApi] = useState(false)
@@ -32,6 +33,7 @@ export default function Settings() {
         setDataSource(s.data_source || 'yfinance')
         setHasPassword(!!s.has_mt5_password)
         setTelegramChatId(s.telegram_chat_id || '')
+        setExecMode(s.execution_mode || 'manual')
         setMt5(prev => ({
           ...prev,
           mt5_login:        s.mt5_login || '',
@@ -95,11 +97,11 @@ export default function Settings() {
 
   const saveTelegram = async () => {
     try {
-      await settingsAPI.update({ ...risk, data_source: dataSource, telegram_chat_id: telegramChatId.trim() })
-      setSaved('Telegram Chat ID saved successfully!')
+      await settingsAPI.update({ ...risk, data_source: dataSource, telegram_chat_id: telegramChatId.trim(), execution_mode: execMode })
+      setSaved('Telegram settings saved successfully!')
       setTimeout(() => setSaved(''), 4000)
     } catch (e) {
-      setSaved('Failed to save Telegram Chat ID')
+      setSaved('Failed to save Telegram settings')
       setTimeout(() => setSaved(''), 4000)
     }
   }
@@ -357,8 +359,35 @@ export default function Settings() {
             {telegramStatus}
           </p>
         )}
+        <div>
+          <label className="text-xs text-wait block mb-2">Execution Mode</label>
+          <div className="space-y-2">
+            {[
+              { value: 'manual', label: '🖐 Manual', desc: 'Telegram sends signal with Accept/Reject buttons — you approve each trade' },
+              { value: 'auto',   label: '⚡ Auto Execute', desc: 'Trades execute automatically on MT5 — HIGH confidence signals only (score ≥ 75%)' },
+            ].map(opt => (
+              <label key={opt.value} className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                execMode === opt.value ? 'border-accent bg-accent/10' : 'border-border'
+              }`}>
+                <input type="radio" name="execMode" value={opt.value}
+                  checked={execMode === opt.value}
+                  onChange={() => setExecMode(opt.value)}
+                  className="mt-1 accent-indigo-500" />
+                <div>
+                  <p className="text-white text-sm font-medium">{opt.label}</p>
+                  <p className="text-wait text-xs">{opt.desc}</p>
+                </div>
+              </label>
+            ))}
+          </div>
+          {execMode === 'auto' && (
+            <p className="mt-2 text-xs text-yellow-400 bg-yellow-400/10 border border-yellow-400/20 rounded-lg px-3 py-2">
+              ⚠️ Auto mode executes trades without your confirmation. Ensure MetaApi is connected and Risk $ is correctly set. Max trades/day and max losses/day limits apply.
+            </p>
+          )}
+        </div>
         <div className="flex gap-3">
-          <Button onClick={saveTelegram}>Save Telegram ID</Button>
+          <Button onClick={saveTelegram}>Save Telegram Settings</Button>
           <button
             onClick={testTelegram}
             disabled={testingTelegram}
