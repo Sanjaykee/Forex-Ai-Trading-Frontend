@@ -364,7 +364,7 @@ export default function Settings() {
           <div className="space-y-2">
             {[
               { value: 'manual', label: '🖐 Manual', desc: 'Telegram sends signal with Accept/Reject buttons — you approve each trade' },
-              { value: 'auto',   label: '⚡ Auto Execute', desc: 'Trades execute automatically on MT5 — HIGH confidence signals only (score ≥ 75%)' },
+              { value: 'auto',   label: '⚡ Auto Execute', desc: 'Trades execute automatically on MT5 — HIGH confidence signals only (score ≥ 55%)' },
             ].map(opt => (
               <label key={opt.value} className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                 execMode === opt.value ? 'border-accent bg-accent/10' : 'border-border'

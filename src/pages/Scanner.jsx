@@ -160,11 +160,96 @@ function SignalRow({ r, index, expanded, setExpanded }) {
   )
 }
 
+const PATTERN_NAMES = {
+  A_CHOCH:    'CHoCH + OB',
+  B_BOS_SWEEP: 'BOS + Sweep',
+  C_ACCUM:    'Accumulation',
+}
+
+function BacktestResults({ data, onClose }) {
+  const { summary, trades } = data
+  const scoreColor = (s) => s >= 75 ? '#22c55e' : s >= 55 ? '#eab308' : '#ef4444'
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-white">📊 2-Day Backtest Results</h3>
+        <button onClick={onClose} className="text-wait text-xs hover:text-white">✕ Close</button>
+      </div>
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-4 gap-3">
+        {[
+          { label: 'Total Signals', value: summary.total, color: 'text-white' },
+          { label: 'Wins', value: summary.wins, color: 'text-buy' },
+          { label: 'Losses', value: summary.losses, color: 'text-sell' },
+          { label: 'Win Rate', value: `${summary.win_rate}%`, color: summary.win_rate >= 60 ? 'text-buy' : 'text-sell' },
+        ].map(c => (
+          <div key={c.label} className="bg-card border border-border rounded-xl p-3 text-center">
+            <p className="text-wait text-xs mb-1">{c.label}</p>
+            <p className={`text-xl font-bold ${c.color}`}>{c.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Trades table */}
+      {trades.length > 0 ? (
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="grid grid-cols-9 gap-2 px-4 py-2 text-xs text-wait border-b border-border bg-dark/50">
+            <div>Pair</div><div>TF</div><div>Time</div><div>Dir</div>
+            <div>Pattern</div><div>Score</div><div>Conf</div>
+            <div>Pips</div><div>Result</div>
+          </div>
+          <div className="max-h-96 overflow-y-auto">
+            {trades.map((t, i) => (
+              <div key={i} className="grid grid-cols-9 gap-2 px-4 py-2 text-xs border-b border-border/30 hover:bg-border/10">
+                <div className="font-bold text-white">{t.symbol}</div>
+                <div className="text-accent">{t.timeframe}</div>
+                <div className="text-wait">{t.time?.slice(11, 16)}</div>
+                <div className={t.direction === 'BUY' ? 'text-buy font-semibold' : 'text-sell font-semibold'}>{t.direction}</div>
+                <div className="text-white">{PATTERN_NAMES[t.pattern] ?? t.pattern}</div>
+                <div>
+                  <span className="font-bold" style={{ color: scoreColor(t.score) }}>{t.score}</span>
+                  <div className="w-full bg-border rounded-full h-1 mt-0.5">
+                    <div className="h-1 rounded-full" style={{ width: `${Math.min(t.score, 100)}%`, backgroundColor: scoreColor(t.score) }} />
+                  </div>
+                </div>
+                <div>
+                  <span className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
+                    t.confidence === 'HIGH' ? 'bg-buy/20 text-buy' :
+                    t.confidence === 'MEDIUM' ? 'bg-yellow-500/20 text-yellow-400' :
+                    'bg-sell/20 text-sell'
+                  }`}>{t.confidence}</span>
+                </div>
+                <div className={t.pips > 0 ? 'text-buy font-semibold' : 'text-sell font-semibold'}>
+                  {t.pips > 0 ? '+' : ''}{t.pips}
+                </div>
+                <div>
+                  <span className={`px-1.5 py-0.5 rounded font-semibold ${
+                    t.outcome === 'WIN' ? 'bg-buy/20 text-buy' : 'bg-sell/20 text-sell'
+                  }`}>{t.outcome === 'WIN' ? '✅ WIN' : '❌ LOSS'}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="bg-card border border-border rounded-xl p-8 text-center">
+          <p className="text-wait text-sm">No completed signals found in the last 2 days.</p>
+          <p className="text-wait text-xs mt-1">This can happen if MetaApi data is limited or no patterns fired.</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Scanner() {
-  const [results, setResults]   = useState([])
-  const [loading, setLoading]   = useState(false)
-  const [lastScan, setLastScan] = useState(null)
-  const [expanded, setExpanded] = useState(null)
+  const [results, setResults]       = useState([])
+  const [loading, setLoading]       = useState(false)
+  const [lastScan, setLastScan]     = useState(null)
+  const [expanded, setExpanded]     = useState(null)
+  const [btLoading, setBtLoading]   = useState(false)
+  const [btResults, setBtResults]   = useState(null)
 
   const runScan = async () => {
     setLoading(true)
@@ -177,6 +262,19 @@ export default function Scanner() {
       console.error(err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const runBacktest = async () => {
+    setBtLoading(true)
+    setBtResults(null)
+    try {
+      const res = await signalsAPI.backtestQuick(2)
+      setBtResults(res.data)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setBtLoading(false)
     }
   }
 
@@ -194,10 +292,26 @@ export default function Scanner() {
             {lastScan && <span className="ml-3">Last scan: {lastScan}</span>}
           </p>
         </div>
-        <Button onClick={runScan} disabled={loading}>
-          {loading ? 'Scanning...' : '🔍 Run Scan'}
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={runBacktest} disabled={btLoading} variant="ghost">
+            {btLoading ? 'Running...' : '📊 2-Day Backtest'}
+          </Button>
+          <Button onClick={runScan} disabled={loading}>
+            {loading ? 'Scanning...' : '🔍 Run Scan'}
+          </Button>
+        </div>
       </div>
+
+      {btLoading && (
+        <div className="bg-card border border-border rounded-xl p-6 text-center">
+          <Loader />
+          <p className="text-wait text-xs mt-2">Running 2-day backtest on all 9 pairs × 2 timeframes... this may take 30–60s</p>
+        </div>
+      )}
+
+      {!btLoading && btResults && (
+        <BacktestResults data={btResults} onClose={() => setBtResults(null)} />
+      )}
 
       {loading && <Loader />}
 

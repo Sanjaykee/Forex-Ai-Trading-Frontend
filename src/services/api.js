@@ -21,10 +21,11 @@ export const authAPI = {
 }
 
 export const signalsAPI = {
-  scan:    ()         => api.get('/signals/scan'),
-  history: ()         => api.get('/signals/history'),
-  approve: (id)       => api.post(`/signals/${id}/approve`),
-  reject:  (id)       => api.post(`/signals/${id}/reject`),
+  scan:          ()     => api.get('/signals/scan'),
+  backtestQuick: (days) => api.get('/signals/backtest-quick', { params: { days } }),
+  history:       ()     => api.get('/signals/history'),
+  approve:       (id)   => api.post(`/signals/${id}/approve`),
+  reject:        (id)   => api.post(`/signals/${id}/reject`),
 }
 
 export const tradesAPI = {
