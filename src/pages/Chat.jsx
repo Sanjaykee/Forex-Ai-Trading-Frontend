@@ -112,18 +112,19 @@ function renderFormatted(text) {
 // ── Main Chat component ───────────────────────────────────────────────────────
 
 const SUGGESTED = [
-  'backtest all pairs M3 last 2 days 1:3',
-  'backtest GBPJPY M15 last 7 days 1:3',
-  'backtest EURUSD M3 last 15 days 1:2',
-  'give signal',
-  'backtest all pairs M15 last 15 days 1:3',
+  { label: '📊 15-Day M3 Backtest (All Pairs)', prompt: 'backtest all pairs M3 last 15 days 1:3' },
+  { label: '⚖️ Compare M3 vs M15 (15 Days)', prompt: 'compare M3 vs M15 last 15 days 1:3' },
+  { label: '🏆 Top Winning Pairs (M3 1:3)', prompt: 'which pairs have the best win rate on M3 last 15 days 1:3' },
+  { label: '🎯 15-Day M15 Backtest (All Pairs)', prompt: 'backtest all pairs M15 last 15 days 1:3' },
+  { label: '⚡ Live Signal Scanner', prompt: 'give signal' },
+  { label: '📈 GBPJPY M3 Backtest', prompt: 'backtest GBPJPY M3 last 15 days 1:3' },
 ]
 
 export default function Chat() {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: '👋 **ForexAI ready.** Ask me to backtest any pair, scan live signals, or check session win rates.',
+      content: '👋 **ForexAI Assistant Ready.**\n\nClick any of the quick-action question chips above to run a 15-day backtest, compare M3 vs M15 performance, or scan live market signals.',
     },
   ])
   const [input, setInput]   = useState('')
@@ -152,7 +153,7 @@ export default function Chat() {
 
   const clearChat = () => setMessages([{
     role: 'assistant',
-    content: '👋 **ForexAI ready.** Ask me to backtest any pair, scan live signals, or check session win rates.',
+    content: '👋 **ForexAI Assistant Ready.**\n\nClick any of the quick-action question chips above to run a 15-day backtest, compare M3 vs M15 performance, or scan live market signals.',
   }])
 
   return (
@@ -176,14 +177,18 @@ export default function Chat() {
         </button>
       </div>
 
-      {/* Suggested prompts */}
+      {/* Suggested prompts / Quick action chips */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-3 no-scrollbar">
-        {SUGGESTED.map((p, i) => (
-          <button key={i} onClick={() => handleSend(p)}
-            className="text-xs whitespace-nowrap bg-card border border-border hover:border-accent text-wait hover:text-white px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 shrink-0">
-            <TrendingUp size={11} className="text-accent" /> {p}
-          </button>
-        ))}
+        {SUGGESTED.map((p, i) => {
+          const text = typeof p === 'string' ? p : p.prompt
+          const label = typeof p === 'string' ? p : p.label
+          return (
+            <button key={i} onClick={() => handleSend(text)}
+              className="text-xs whitespace-nowrap bg-card/90 hover:bg-accent/15 border border-border hover:border-accent text-wait hover:text-white px-3.5 py-1.5 rounded-full transition-all flex items-center gap-1.5 shrink-0 shadow-sm active:scale-95">
+              <TrendingUp size={11} className="text-accent" /> {label}
+            </button>
+          )
+        })}
       </div>
 
       {/* Messages */}

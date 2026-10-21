@@ -5,7 +5,7 @@ const isProd = activeProfile === 'prod' || activeProfile === 'production'
 
 export const API_BASE_URL =
   (isProd ? import.meta.env.VITE_API_URL_PROD : import.meta.env.VITE_API_URL_LOCAL) ||
-  'http://localhost:8000'
+  'http://localhost:8001'
 
 const api = axios.create({ baseURL: API_BASE_URL })
 
