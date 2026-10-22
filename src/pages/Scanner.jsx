@@ -288,7 +288,7 @@ export default function Scanner() {
         <div>
           <h2 className="text-xl font-bold text-white">Multi-Pair Scanner</h2>
           <p className="text-wait text-xs mt-1">
-            Scans M15 + M3 | Patterns: CHoCH+OB · BOS+Sweep · Accumulation
+            Scans Dual Mode: M15 + M5 | Patterns: CHoCH+OB · BOS+Sweep · Accumulation
             {lastScan && <span className="ml-3">Last scan: {lastScan}</span>}
           </p>
         </div>
