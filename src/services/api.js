@@ -22,7 +22,8 @@ export const authAPI = {
 
 export const signalsAPI = {
   scan:          ()     => api.get('/signals/scan'),
-  backtestQuick: (days) => api.get('/signals/backtest-quick', { params: { days } }),
+  backtestQuick:     (days) => api.get('/signals/backtest-quick', { params: { days } }),
+  backtestYesterday: ()     => api.get('/signals/backtest-yesterday'),
   history:       ()     => api.get('/signals/history'),
   approve:       (id)   => api.post(`/signals/${id}/approve`),
   reject:        (id)   => api.post(`/signals/${id}/reject`),
