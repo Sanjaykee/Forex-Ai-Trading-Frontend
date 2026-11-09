@@ -5,7 +5,7 @@ import { Button, Loader } from '../components/common'
 export default function Settings() {
   const [mt5, setMt5]         = useState({ mt5_login: '', mt5_password: '', mt5_server: '', telegram_chat_id: '' })
   const [risk, setRisk]       = useState({ max_risk_usd: 1, max_trades_day: 2, max_losses_day: 2, rr_ratio: 2 })
-  const [dataSource, setDataSource] = useState('yfinance')
+  const [dataSource, setDataSource] = useState('')
   const [hasPassword, setHasPassword] = useState(false)
   const [telegramChatId, setTelegramChatId] = useState('')
   const [telegramStatus, setTelegramStatus] = useState('')
