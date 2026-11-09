@@ -17,6 +17,7 @@ export default function Settings() {
   const [ctrader, setCtrader] = useState({ account_id: '', server: 'demo.ctrader.com' })
   const [ctraderStatus, setCtraderStatus] = useState(null)
   const [savingCtrader, setSavingCtrader] = useState(false)
+  const [mt5Status, setMt5Status] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saved, setSaved]     = useState('')
 
@@ -40,6 +41,14 @@ export default function Settings() {
           mt5_server:       s.mt5_server || '',
           telegram_chat_id: s.telegram_chat_id || '',
         }))
+        if (s.mt5_login) {
+          setMt5Status({
+            connected: !!s.mt5_connected,
+            balance:   s.mt5_balance,
+            currency:  s.mt5_currency,
+            login:     s.mt5_login,
+          })
+        }
         if (s.ctrader_account_id) {
           setCtraderStatus({ configured: true, connected: s.ctrader_connected, account_id: s.ctrader_account_id })
           setCtrader(prev => ({
@@ -168,6 +177,10 @@ export default function Settings() {
       const res = await settingsAPI.setupMT5({ ...mt5, telegram_chat_id: telegramChatId })
       setDataSource('mt5')
       setSaved(res.data?.message || 'MT5 connected successfully!')
+      const acc = res.data?.account
+      setMt5Status(res.data?.connected
+        ? { connected: true, balance: acc?.balance, currency: acc?.currency, login: mt5.mt5_login }
+        : { connected: false, balance: null, currency: null, login: mt5.mt5_login })
       setTimeout(() => setSaved(''), 4000)
     } catch (e) {
       setSaved('Failed to connect MT5')
@@ -211,7 +224,7 @@ export default function Settings() {
         ))}
       </div>
 
-      {/* cTrader Open API Card */}
+      {dataSource === 'ctrader' && (
       <div className="bg-card border border-border rounded-xl p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-white">🔴 cTrader Open API (IC Markets)</h3>
@@ -253,8 +266,9 @@ export default function Settings() {
           </button>
         )}
       </div>
+      )}
 
-      {/* MetaApi Cloud MT5 Card */}
+      {dataSource === 'metaapi' && (
       <div className="bg-card border border-border rounded-xl p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-white">⚡ MetaApi Cloud Bridge (MT5 Mobile Real Execution)</h3>
@@ -305,11 +319,18 @@ export default function Settings() {
           {savingMetaApi ? "Connecting to MT5..." : "Connect MetaApi Cloud MT5"}
         </Button>
       </div>
+      )}
 
-
-
+      {dataSource === 'mt5' && (
       <div className="bg-card border border-border rounded-xl p-6 space-y-4">
-        <h3 className="font-semibold text-white">MT5 Connection (Local PC)</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-white">MT5 Connection (Local PC)</h3>
+          {mt5Status?.connected && (
+            <span className="text-[10px] text-buy font-medium bg-buy/10 px-2 py-0.5 rounded border border-buy/20">
+              ✓ Connected ({mt5Status.currency} {mt5Status.balance})
+            </span>
+          )}
+        </div>
         <p className="text-xs text-wait">Required only if using MetaTrader 5 Desktop as data source.</p>
         {[
           { label: 'MT5 Login',    key: 'mt5_login',    type: 'text' },
@@ -330,6 +351,7 @@ export default function Settings() {
         ))}
         <Button onClick={saveMT5}>Connect MT5</Button>
       </div>
+      )}
 
       <div className="bg-card border border-border rounded-xl p-6 space-y-4">
         <div className="flex items-center justify-between">
