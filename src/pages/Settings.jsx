@@ -188,6 +188,30 @@ export default function Settings() {
     }
   }
 
+  const disconnectMT5 = async () => {
+    try {
+      const res = await settingsAPI.disconnectMT5()
+      setMt5Status({ connected: false, balance: null, currency: null, login: mt5.mt5_login })
+      setSaved(res.data?.message || 'MT5 disconnected successfully!')
+      setTimeout(() => setSaved(''), 4000)
+    } catch (e) {
+      setSaved('Failed to disconnect MT5')
+      setTimeout(() => setSaved(''), 4000)
+    }
+  }
+
+  const disconnectMetaApi = async () => {
+    try {
+      const res = await settingsAPI.disconnectMetaApi()
+      setMetaApiStatus(prev => ({ ...(prev || {}), connected: false, account: null }))
+      setSaved(res.data?.message || 'MetaApi disconnected successfully!')
+      setTimeout(() => setSaved(''), 4000)
+    } catch (e) {
+      setSaved('Failed to disconnect MetaApi')
+      setTimeout(() => setSaved(''), 4000)
+    }
+  }
+
   const saveRisk = async () => {
     await settingsAPI.update({ ...risk, data_source: dataSource, telegram_chat_id: telegramChatId })
     setSaved('Settings saved!')
@@ -272,9 +296,13 @@ export default function Settings() {
       <div className="bg-card border border-border rounded-xl p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-white">⚡ MetaApi Cloud Bridge (MT5 Mobile Real Execution)</h3>
-          {metaApiStatus?.connected && (
+          {metaApiStatus?.connected ? (
             <span className="text-[10px] text-buy font-medium bg-buy/10 px-2 py-0.5 rounded border border-buy/20">
               ✓ Connected ({metaApiStatus.account?.currency} {metaApiStatus.account?.balance})
+            </span>
+          ) : (
+            <span className="text-[10px] text-wait font-medium bg-wait/10 px-2 py-0.5 rounded border border-wait/20">
+              ● Disconnected
             </span>
           )}
         </div>
@@ -315,9 +343,23 @@ export default function Settings() {
             <option value="frankfurt">Frankfurt</option>
           </select>
         </div>
-        <Button onClick={saveMetaApi} disabled={savingMetaApi}>
-          {savingMetaApi ? "Connecting to MT5..." : "Connect MetaApi Cloud MT5"}
-        </Button>
+        {metaApiStatus?.connected ? (
+          <div className="flex gap-3">
+            <Button onClick={saveMetaApi} disabled={savingMetaApi} className="flex-1">
+              {savingMetaApi ? "Connecting to MT5..." : "Reconnect MetaApi"}
+            </Button>
+            <button
+              onClick={disconnectMetaApi}
+              className="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex-1"
+            >
+              Disconnect MetaApi
+            </button>
+          </div>
+        ) : (
+          <Button onClick={saveMetaApi} disabled={savingMetaApi}>
+            {savingMetaApi ? "Connecting to MT5..." : "Connect MetaApi Cloud MT5"}
+          </Button>
+        )}
       </div>
       )}
 
@@ -325,9 +367,13 @@ export default function Settings() {
       <div className="bg-card border border-border rounded-xl p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-white">MT5 Connection (Local PC)</h3>
-          {mt5Status?.connected && (
+          {mt5Status?.connected ? (
             <span className="text-[10px] text-buy font-medium bg-buy/10 px-2 py-0.5 rounded border border-buy/20">
               ✓ Connected ({mt5Status.currency} {mt5Status.balance})
+            </span>
+          ) : (
+            <span className="text-[10px] text-wait font-medium bg-wait/10 px-2 py-0.5 rounded border border-wait/20">
+              ● Disconnected
             </span>
           )}
         </div>
@@ -349,7 +395,19 @@ export default function Settings() {
               value={mt5[key]} onChange={e => setMt5({ ...mt5, [key]: e.target.value })} />
           </div>
         ))}
-        <Button onClick={saveMT5}>Connect MT5</Button>
+        {mt5Status?.connected ? (
+          <div className="flex gap-3">
+            <Button onClick={saveMT5} className="flex-1">Reconnect MT5</Button>
+            <button
+              onClick={disconnectMT5}
+              className="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex-1"
+            >
+              Disconnect MT5
+            </button>
+          </div>
+        ) : (
+          <Button onClick={saveMT5}>Connect MT5</Button>
+        )}
       </div>
       )}
 
